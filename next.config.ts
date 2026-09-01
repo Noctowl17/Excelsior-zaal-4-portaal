@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Nodig voor een lichte, standalone Docker-image (zie Dockerfile).
+  output: "standalone",
 };
 
 export default nextConfig;

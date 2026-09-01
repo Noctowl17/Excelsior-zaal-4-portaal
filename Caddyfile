@@ -1,0 +1,5 @@
+# Vervang "portaal.jouwdomein.nl" hieronder door je echte (sub)domein.
+# Caddy regelt daarna automatisch een geldig HTTPS-certificaat.
+portaal.jouwdomein.nl {
+	reverse_proxy app:3000
+}
