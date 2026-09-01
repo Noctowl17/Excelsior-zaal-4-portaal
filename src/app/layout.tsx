@@ -10,23 +10,37 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="nl" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-neutral-50 text-neutral-900">
-        <header className="border-b bg-white">
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <header className="sticky top-0 z-10 border-b border-border/80 bg-background/90 backdrop-blur">
           <nav className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-            <Link href="/" className="font-semibold">
-              Excelsior&apos;31 4
+            <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
+                E31
+              </span>
+              <span className="hidden sm:inline">
+                Excelsior&apos;31 <span className="text-accent">4</span>
+              </span>
             </Link>
-            <div className="flex gap-4 text-sm">
-              <Link href="/wedstrijden">Wedstrijden</Link>
-              <Link href="/spelers">Spelers</Link>
-              <Link href="/login">Staf login</Link>
+            <div className="flex items-center gap-5 text-sm font-medium text-muted">
+              <Link href="/wedstrijden" className="transition hover:text-foreground">
+                Wedstrijden
+              </Link>
+              <Link href="/spelers" className="transition hover:text-foreground">
+                Spelers
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-full border border-border px-3 py-1.5 text-foreground transition hover:border-accent hover:text-accent"
+              >
+                Staf login
+              </Link>
             </div>
           </nav>
         </header>
         <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
           {children}
         </main>
-        <footer className="border-t bg-white py-4 text-center text-xs text-neutral-500">
+        <footer className="border-t border-border py-4 text-center text-xs text-muted">
           Teamportaal Excelsior&apos;31 4 &middot; seizoen {new Date().getFullYear()}
         </footer>
       </body>
