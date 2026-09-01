@@ -24,18 +24,31 @@ publishable/anon key vind je in het Supabase Dashboard onder
 
 ## Staf-accounts aanmaken
 
-Log via `/login` in met het e-mailadres van een staflid (magic link, geen
-wachtwoord nodig). Dat maakt automatisch een account aan in Supabase Auth,
-maar nog niemand mag daarna schrijven totdat er ook een rij in de
-`staff_users`-tabel staat. Voeg die toe via de Supabase SQL-editor:
+`/login` werkt met e-mailadres + wachtwoord (geen magic link meer - die liep
+al snel tegen de standaard e-mail-rate-limit van Supabase aan). Nieuwe
+staf-accounts maak je daarom rechtstreeks aan in het Supabase Dashboard, niet
+via de website:
+
+1. Ga naar **Authentication > Users > Add user > Create new user**.
+2. Vul het e-mailadres en een (tijdelijk) wachtwoord in, en vink **Auto
+   Confirm User** aan (anders moet het account eerst een bevestigingsmail
+   accepteren, wat weer tegen dezelfde rate-limit aanloopt).
+3. Voeg daarna een rij toe aan de `staff_users`-tabel via de Supabase
+   SQL-editor, zodat het account ook echt mag schrijven:
 
 ```sql
 insert into staff_users (id, full_name, role)
 values ('<user-id-uit-auth.users>', 'Voornaam Achternaam', 'admin');
 ```
 
-De `<user-id>` vind je in Supabase Dashboard onder **Authentication > Users**
-nadat iemand voor het eerst heeft ingelogd.
+De `<user-id>` vind je in dezelfde **Authentication > Users**-lijst, bij de
+zojuist aangemaakte gebruiker.
+
+**Wachtwoord kwijt of wijzigen?** Ga naar **Authentication > Users**, open de
+gebruiker en zet daar een nieuw wachtwoord. Er is bewust geen
+zelfservice-"wachtwoord vergeten"-link, omdat die ook weer op de e-mail
+rate-limit zou stuiten - voor dit team-formaat is handmatig resetten door een
+beheerder simpeler en betrouwbaarder.
 
 ## Speelschema synchroniseren (iCal)
 

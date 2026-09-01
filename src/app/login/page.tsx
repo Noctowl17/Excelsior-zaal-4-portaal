@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+const errorTranslations: Record<string, string> = {
+  "Invalid login credentials": "E-mailadres of wachtwoord klopt niet.",
+};
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
-    "idle",
-  );
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -16,19 +19,18 @@ export default function LoginPage() {
     setErrorMessage(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      password,
     });
 
     if (error) {
       setStatus("error");
-      setErrorMessage(error.message);
-    } else {
-      setStatus("sent");
+      setErrorMessage(errorTranslations[error.message] ?? error.message);
+      return;
     }
+
+    window.location.href = "/";
   }
 
   return (
@@ -40,16 +42,26 @@ export default function LoginPage() {
         <h1 className="mt-4 text-xl font-bold tracking-tight">Staf login</h1>
         <p className="mt-2 text-sm text-muted">
           Alleen voor staf die aanwezigheid, statistieken en spelers mag
-          invoeren. Vul je e-mailadres in en je krijgt een inloglink.
+          invoeren.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3 text-left">
           <input
             type="email"
             required
+            autoComplete="email"
             placeholder="naam@voorbeeld.nl"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+          <input
+            type="password"
+            required
+            autoComplete="current-password"
+            placeholder="Wachtwoord"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
           />
           <button
@@ -57,18 +69,17 @@ export default function LoginPage() {
             disabled={status === "sending"}
             className="w-full rounded-lg bg-accent px-3 py-2 font-semibold text-accent-foreground transition hover:bg-accent-strong disabled:opacity-50"
           >
-            {status === "sending" ? "Bezig..." : "Stuur inloglink"}
+            {status === "sending" ? "Bezig..." : "Inloggen"}
           </button>
         </form>
 
-        {status === "sent" && (
-          <p className="mt-4 text-sm text-accent">
-            Check je mailbox - er staat een inloglink klaar.
-          </p>
-        )}
         {status === "error" && (
           <p className="mt-4 text-sm text-danger">{errorMessage}</p>
         )}
+
+        <p className="mt-4 text-xs text-muted">
+          Nog geen wachtwoord, of kwijt? Vraag het aan bij een beheerder.
+        </p>
       </div>
     </div>
   );
