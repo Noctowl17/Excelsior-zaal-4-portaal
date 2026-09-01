@@ -26,6 +26,15 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# De volledige node_modules en het scripts/-mapje erbij (overschrijft de kleinere
+# standalone node_modules), zodat dezelfde image ook het iCal-syncscript kan
+# draaien, bv. als TrueNAS cron-job:
+#   docker run --rm -e SUPABASE_URL=... -e SUPABASE_SERVICE_ROLE_KEY=... \
+#     -e ICAL_URL=... <image> node scripts/sync-ical.mjs
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/package.json ./package.json
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
