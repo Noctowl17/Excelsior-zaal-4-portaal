@@ -63,16 +63,19 @@ script aan.
 **Op TrueNAS** hoef je hier niets voor te installeren: dezelfde Docker-image
 die de website draait, bevat ook dit script. Zet onder **System Settings >
 Advanced Settings > Cron Jobs** een taak die als root draait, bijvoorbeeld
-elke ochtend om 06:00 (`0 6 * * *`), met als commando:
+elke ochtend om 06:00 (`0 6 * * *`), met als commando. **Belangrijk:** plak dit
+als **één regel** in het commando-veld - het TrueNAS-tekstveld behandelt
+regeleindes anders dan een terminal, waardoor de `\`-regelvervolgtekens uit
+een multi-line commando corrupt raken en Docker afbreekt met exit-code 125
+(EFAULT):
 
 ```bash
-docker run --rm \
-  -e SUPABASE_URL=https://jfbzombcnzpddfxsqysh.supabase.co \
-  -e SUPABASE_SERVICE_ROLE_KEY=<service-role-secret> \
-  -e ICAL_URL="https://data.sportlink.com/ical-team?token=..." \
-  ghcr.io/noctowl17/excelsior-zaal-4-portaal:latest \
-  node scripts/sync-ical.mjs
+docker run --rm -e SUPABASE_URL=https://jfbzombcnzpddfxsqysh.supabase.co -e SUPABASE_SERVICE_ROLE_KEY=<service-role-secret> -e ICAL_URL="https://data.sportlink.com/ical-team?token=..." ghcr.io/noctowl17/excelsior-zaal-4-portaal:latest node scripts/sync-ical.mjs
 ```
+
+(De multi-line versie met `\` hieronder is enkel handig om lokaal in een
+terminal te testen, zie de volgende sectie - gebruik die niet in het
+TrueNAS-cronveld.)
 
 ## Deployen op TrueNAS SCALE
 
