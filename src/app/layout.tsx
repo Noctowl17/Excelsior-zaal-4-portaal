@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { AuthNav } from "./auth-nav";
-import { createClient } from "@/lib/supabase/server";
+import { getStaffContext } from "@/lib/staff";
 
 export const metadata: Metadata = {
   title: "Excelsior'31 4 - Teamportaal",
@@ -10,10 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, isStaff } = await getStaffContext();
 
   return (
     <html lang="nl" className="h-full antialiased">
@@ -35,7 +32,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/spelers" className="transition hover:text-foreground">
                 Spelers
               </Link>
-              <AuthNav email={user?.email ?? null} />
+              <AuthNav email={user?.email ?? null} isStaff={isStaff} />
             </div>
           </nav>
         </header>

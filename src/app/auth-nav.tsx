@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-export function AuthNav({ email }: { email: string | null }) {
+export function AuthNav({
+  email,
+  isStaff,
+}: {
+  email: string | null;
+  isStaff: boolean;
+}) {
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -23,6 +29,11 @@ export function AuthNav({ email }: { email: string | null }) {
 
   return (
     <div className="flex items-center gap-3">
+      {isStaff && (
+        <Link href="/beheer" className="transition hover:text-foreground">
+          Beheer
+        </Link>
+      )}
       <span className="hidden text-xs text-muted sm:inline">
         Ingelogd als <span className="text-foreground">{email}</span>
       </span>
