@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { AuthNav } from "./auth-nav";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Excelsior'31 4 - Teamportaal",
   description: "Statistieken, wedstrijden en spelerskaarten van Excelsior'31 4",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html lang="nl" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-background text-foreground">
@@ -28,12 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/spelers" className="transition hover:text-foreground">
                 Spelers
               </Link>
-              <Link
-                href="/login"
-                className="rounded-full border border-border px-3 py-1.5 text-foreground transition hover:border-accent hover:text-accent"
-              >
-                Staf login
-              </Link>
+              <AuthNav email={user?.email ?? null} />
             </div>
           </nav>
         </header>
