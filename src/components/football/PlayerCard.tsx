@@ -54,7 +54,15 @@ export function PlayerCard({ player, index, active, muted, introComplete, onActi
         <circleGeometry args={[active ? 1.3 : 0.85, 28]} />
         <meshBasicMaterial color="#00190f" transparent opacity={active ? 0.5 : 0.34} depthWrite={false} />
       </mesh>
-      <Html center distanceFactor={16} zIndexRange={[50, 5]}>
+      {/*
+        distanceFactor schaalt de kaart mee met de 3D-afstand tot de camera —
+        mooi voor het rustende "diepte"-gevoel, maar spelers die verder naar
+        achteren staan (bv. de keeper) blijven daardoor bij hover/actief te
+        klein om te lezen. Zodra een kaart actief is, laten we distanceFactor
+        weg: dan rendert de kaart op zijn volle, vaste CSS-grootte
+        (.player-card.is-active), ongeacht waar de speler op het veld staat.
+      */}
+      <Html center distanceFactor={active ? undefined : 16} zIndexRange={[50, 5]}>
         <motion.button
           type="button"
           className={`player-card ${active ? "is-active" : ""} ${muted ? "is-muted" : ""}`}
