@@ -38,7 +38,7 @@ export default async function SpelersPage() {
                 </span>
               ) : null}
             </div>
-            <div className="-mt-8 flex flex-col items-center px-4 pb-4 text-center">
+            <div className="-mt-4 flex flex-col items-center px-4 pb-4 text-center">
               {p.photo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- vast avatarformaat; next/image is hier overkill.
                 <img
