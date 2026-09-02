@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getStaffContext } from "@/lib/staff";
 import { updatePlayer } from "../actions";
@@ -20,6 +21,17 @@ export default async function EditPlayerPage({
   if (!player) {
     notFound();
   }
+
+  // "Geblesseerd" is geen los veld op players, maar leidt af of er een
+  // actieve rij in de bestaande blessuretabel staat (zie ook
+  // /beheer/blessures) — zo blijft er één bron van waarheid.
+  const { data: activeInjury } = await supabase
+    .from("injuries")
+    .select("id")
+    .eq("player_id", player.id)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
 
   const updatePlayerWithId = updatePlayer.bind(null, player.id);
 
@@ -75,6 +87,24 @@ export default async function EditPlayerPage({
           />
           Actief in de selectie
         </label>
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            name="injured"
+            defaultChecked={!!activeInjury}
+            className="h-4 w-4 rounded border-border"
+          />
+          Geblesseerd
+        </label>
+        <p className="text-xs text-muted">
+          Dit zet een blessure op &quot;actief&quot; of &quot;hersteld&quot;
+          in het blessureoverzicht. Voor een startdatum of omschrijving:
+          gebruik{" "}
+          <Link href="/beheer/blessures" className="text-accent hover:underline">
+            Blessures
+          </Link>
+          .
+        </p>
         <button
           type="submit"
           className="w-full rounded-lg bg-accent px-3 py-2 font-semibold text-accent-foreground transition hover:bg-accent-strong"

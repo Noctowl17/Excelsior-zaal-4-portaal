@@ -311,6 +311,7 @@ export type Database = {
           first_name: string | null
           goals: number | null
           id: string | null
+          is_injured: boolean | null
           last_name: string | null
           matches_absent: number | null
           matches_excused: number | null

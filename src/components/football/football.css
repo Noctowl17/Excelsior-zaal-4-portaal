@@ -231,6 +231,35 @@
   font-size: 0.48rem;
   font-weight: 900;
 }
+.injury-badge {
+  position: absolute;
+  z-index: 3;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: oklch(0.58 0.21 25);
+  box-shadow: 0 2px 8px oklch(0.02 0.02 20 / 55%), inset 0 1px 0 oklch(1 0 0 / 25%);
+}
+.injury-badge svg {
+  width: 0.78rem;
+  height: 0.78rem;
+  color: oklch(0.98 0.01 20);
+  transform: rotate(-45deg);
+}
+.is-active .injury-badge {
+  left: 0.6rem;
+  bottom: 0.6rem;
+  width: 1.65rem;
+  height: 1.65rem;
+}
+.is-active .injury-badge svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
 .player-identity {
   position: relative;
   z-index: 2;

@@ -2,6 +2,7 @@
 
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
+import { Bandage } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
 import * as THREE from "three";
@@ -97,6 +98,12 @@ export function PlayerCard({ player, index, active, muted, introComplete, onActi
             </span>
             <span className="shirt-number">{player.number ?? "-"}</span>
             <span className="position-tag">{player.position ?? ""}</span>
+            {player.injured && (
+              <span className="injury-badge" title="Geblesseerd">
+                <Bandage aria-hidden="true" />
+                <span className="sr-only">Geblesseerd</span>
+              </span>
+            )}
           </span>
           <span className="player-identity">
             <strong>{player.name}</strong>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Bandage } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { FootballExperienceClient } from "@/components/football/FootballExperienceClient";
 import type { StadiumPlayer } from "@/components/football/types";
@@ -60,6 +61,7 @@ type SquadPlayer = {
   yellow_cards: number | null;
   red_cards: number | null;
   matches_present: number | null;
+  is_injured: boolean | null;
 };
 
 function displayName(firstName: string | null, lastName: string | null) {
@@ -88,7 +90,7 @@ export default async function HomePage() {
   const { data: squad } = await supabase
     .from("player_stats_overview")
     .select(
-      "id, first_name, last_name, shirt_number, position, goals, yellow_cards, red_cards, matches_present",
+      "id, first_name, last_name, shirt_number, position, goals, yellow_cards, red_cards, matches_present, is_injured",
     )
     .eq("active", true)
     .order("shirt_number", { ascending: true, nullsFirst: false })
@@ -117,6 +119,7 @@ export default async function HomePage() {
       goals: row.goals ?? 0,
       yellowCards: row.yellow_cards ?? 0,
       redCards: row.red_cards ?? 0,
+      injured: row.is_injured ?? false,
       coordinates: slot.coordinates,
     });
   }
@@ -162,9 +165,18 @@ export default async function HomePage() {
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {benchRows.map((p) => (
               <div key={p.id} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
-                <p className="font-medium">
+                <p className="flex items-center gap-1.5 font-medium">
                   {displayName(p.first_name, p.last_name)}
                   {p.shirt_number ? ` (#${p.shirt_number})` : ""}
+                  {p.is_injured && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-danger/15 px-1.5 py-0.5 text-[0.65rem] font-semibold text-danger"
+                      title="Geblesseerd"
+                    >
+                      <Bandage className="h-3 w-3" aria-hidden="true" />
+                      Geblesseerd
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-muted">{p.position ?? "positie onbekend"}</p>
               </div>
