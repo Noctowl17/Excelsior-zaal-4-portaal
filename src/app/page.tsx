@@ -144,9 +144,15 @@ export default async function HomePage() {
         // Full-bleed: breekt bewust uit de smalle `max-w-4xl` paginacontainer
         // (zie layout.tsx) zodat de hero de volle breedte van het scherm
         // gebruikt. De sticky header van de site blijft daar gewoon boven
-        // zichtbaar en werkt normaal.
+        // zichtbaar en werkt normaal. Bewust GEEN `transform` (zoals de
+        // gangbare `left-1/2 -translate-x-1/2`-truc) om dit te bereiken: een
+        // `transform` op een voorouder maakt 'm de containing block voor
+        // `position: fixed`-kinderen, wat de gecentreerde mobiele
+        // spelersoverlay (MobilePlayerOverlay) zou breken — die verschijnt
+        // dan immers niet meer relatief aan de echte viewport. Marge-gebaseerd
+        // full-bleed geeft hetzelfde resultaat zonder dat probleem.
         <div className="overflow-x-hidden">
-          <div className="relative left-1/2 w-screen -translate-x-1/2">
+          <div className="w-screen" style={{ marginLeft: "calc(50% - 50vw)" }}>
             <FootballExperienceClient
               players={onPitch}
               clubName="Excelsior'31 4"

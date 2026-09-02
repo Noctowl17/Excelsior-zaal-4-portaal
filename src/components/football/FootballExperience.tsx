@@ -7,6 +7,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { FootballPitch } from "./FootballPitch";
 import { Formation } from "./Formation";
+import { MobilePlayerOverlay } from "./MobilePlayerOverlay";
 import { StadiumBackground } from "./StadiumBackground";
 import type { StadiumPlayer } from "./types";
 import "./football.css";
@@ -159,12 +160,38 @@ export function FootballExperience({ players, clubName, formationLabel, seasonLa
   const reduceMotion = useReducedMotion();
   const [introComplete, setIntroComplete] = useState(Boolean(reduceMotion));
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Zelfde drempel als de `@media (max-width: 760px)` in football.css en de
+  // `mobile`-check in de camera/kaart-animaties, zodat alles synchroon
+  // schakelt.
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (reduceMotion) return;
     const timer = window.setTimeout(() => setIntroComplete(true), 1850);
     return () => window.clearTimeout(timer);
   }, [reduceMotion]);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  // Op mobiel tonen we de vergrote spelerskaart als gecentreerde overlay
+  // (zie MobilePlayerOverlay) i.p.v. in-place te laten groeien op de
+  // veldpositie van de speler.
+  const overlayPlayer = isMobile ? (players.find((p) => p.id === activeId) ?? null) : null;
+
+  useEffect(() => {
+    if (!overlayPlayer) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveId(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [overlayPlayer]);
 
   return (
     <div className="football-world" onClick={() => activeId && setActiveId(null)}>
@@ -194,13 +221,13 @@ export function FootballExperience({ players, clubName, formationLabel, seasonLa
         <p>
           <span /> {formationLabel} <span />
         </p>
-        <h1>De basisploeg</h1>
-        <span className="squad-subtitle">Beweeg over een speler voor de cijfers dit seizoen</span>
+        <h1 className="squad-heading-clubname">Excelsior&apos;31 Zaal 4</h1>
       </motion.header>
       <div className="pitch-caption" aria-hidden="true">
         <span>Basisopstelling</span>
         <span>{seasonLabel}</span>
       </div>
+      <MobilePlayerOverlay player={overlayPlayer} onClose={() => setActiveId(null)} />
     </div>
   );
 }

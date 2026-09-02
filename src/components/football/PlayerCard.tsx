@@ -2,11 +2,11 @@
 
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { Bandage } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
 import * as THREE from "three";
 import type { StadiumPlayer } from "./types";
+import { PlayerPortrait } from "./PlayerPortrait";
 import { PlayerStats } from "./PlayerStats";
 
 // Geporteerd van het Lovable-ontwerp ("stadium-spirit"). Het ontwerp gebruikt
@@ -26,17 +26,23 @@ export function PlayerCard({ player, index, active, muted, introComplete, onActi
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const reduceMotion = useReducedMotion();
 
-  useFrame(({ clock }, rawDelta) => {
+  useFrame(({ clock, size }, rawDelta) => {
     const group = groupRef.current;
     if (!group) return;
     const delta = Math.min(rawDelta, 0.05);
     const time = clock.getElapsedTime();
+    // Op mobiel laten we een actieve kaart niet meer in de 3D-scene groeien/
+    // omhoogkomen: die groei gebeurt op de veldpositie van de speler, die
+    // overal kan liggen (dus ook half buiten beeld). De vergrote weergave
+    // verschijnt op mobiel in plaats daarvan gecentreerd als losse overlay
+    // (zie MobilePlayerOverlay) — hier blijft de kaart op zijn plek staan.
+    const mobile = size.width < 760;
     const entered = introComplete || reduceMotion;
     const baseHeight = entered ? 1.32 : -0.25;
     const float = reduceMotion ? 0 : Math.sin(time * 1.15 + index * 0.72) * 0.13;
-    const targetHeight = baseHeight + float + (active ? 1.35 : 0);
+    const targetHeight = baseHeight + float + (active && !mobile ? 1.35 : 0);
     group.position.y += (targetHeight - group.position.y) * (1 - Math.exp(-7 * delta));
-    const targetScale = active ? 1.18 : 1;
+    const targetScale = active && !mobile ? 1.18 : 1;
     group.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 1 - Math.exp(-8 * delta));
   });
 
@@ -93,27 +99,7 @@ export function PlayerCard({ player, index, active, muted, introComplete, onActi
         >
           <span className="card-sheen" aria-hidden="true" />
           <span className="portrait-wrap">
-            {player.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- vaste portret-tegel in een 3D/Html-laag; geen next/image nodig.
-              <img
-                src={player.photoUrl}
-                alt=""
-                className="portrait-photo"
-                loading="lazy"
-              />
-            ) : (
-              <span className="portrait-placeholder" aria-hidden="true">
-                <span className="portrait-initials">{player.initials}</span>
-              </span>
-            )}
-            <span className="shirt-number">{player.number ?? "-"}</span>
-            <span className="position-tag">{player.position ?? ""}</span>
-            {player.injured && (
-              <span className="injury-badge" title="Geblesseerd">
-                <Bandage aria-hidden="true" />
-                <span className="sr-only">Geblesseerd</span>
-              </span>
-            )}
+            <PlayerPortrait player={player} />
           </span>
           <span className="player-identity">
             <strong>{player.name}</strong>

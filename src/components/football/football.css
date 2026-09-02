@@ -122,6 +122,9 @@
   color: var(--muted-foreground);
   font-size: 0.78rem;
 }
+.squad-heading-clubname {
+  color: #fff;
+}
 .pitch-caption {
   position: absolute;
   z-index: 5;
@@ -410,18 +413,77 @@
   .player-identity strong {
     font-size: 0.76rem;
   }
+  /*
+   * Op mobiel laten we een aangetikte kaart niet meer op zijn veldpositie
+   * groeien (die kan overal op het veld liggen, dus ook half buiten beeld
+   * vallen) — vandaar hier bewust terug naar de normale kaartmaat. De
+   * vergrote weergave verschijnt in plaats daarvan gecentreerd via
+   * .mobile-player-overlay (zie MobilePlayerOverlay.tsx).
+   */
   .player-card.is-active {
-    width: 11.8rem;
-    height: 17.7rem;
+    width: 6.25rem;
+    height: 8.4rem;
   }
   .is-active .portrait-wrap {
-    height: 8.6rem;
+    height: 6rem;
   }
   .pitch-caption {
     left: 0.85rem;
     right: 0.85rem;
     bottom: 0.7rem;
   }
+}
+
+/*
+ * Losstaande, gecentreerde kopie van de actieve kaart voor mobiel/touch
+ * (zie MobilePlayerOverlay.tsx). Bewust GEEN .player-card/.is-active
+ * klassen hergebruikt voor het buitenste element — dat zou een
+ * specificiteits-/media-query-gevecht opleveren met de bovenstaande
+ * mobiele "geen groei in-place"-regel. In plaats daarvan een eigen, volledig
+ * losstaande stijl met dezelfde visuele opmaak als de actieve kaart.
+ */
+.mobile-player-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1.75rem;
+  background: oklch(0.02 0.02 160 / 74%);
+}
+.mobile-overlay-card {
+  position: relative;
+  display: block;
+  width: 11.8rem;
+  height: 17.7rem;
+  overflow: hidden;
+  color: var(--card-foreground);
+  text-align: left;
+  background: linear-gradient(155deg, oklch(0.31 0.075 151 / 96%), var(--glass-strong));
+  border: 1px solid oklch(0.86 0.16 135 / 72%);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-deep), var(--shadow-glow), inset 0 1px 0 oklch(1 0 0 / 20%);
+}
+.mobile-overlay-card .portrait-wrap {
+  height: 8.6rem;
+}
+.mobile-overlay-close {
+  position: absolute;
+  z-index: 5;
+  right: 0.5rem;
+  top: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  color: oklch(0.98 0.01 20);
+  background: oklch(0.04 0.025 160 / 55%);
+  border: 1px solid oklch(1 0 0 / 22%);
+  border-radius: 999px;
+}
+.mobile-overlay-close svg {
+  width: 0.85rem;
+  height: 0.85rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
