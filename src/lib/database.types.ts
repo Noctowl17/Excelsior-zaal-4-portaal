@@ -205,7 +205,9 @@ export type Database = {
       }
       matches: {
         Row: {
+          away_score: number | null
           created_at: string
+          home_score: number | null
           ical_uid: string | null
           id: string
           is_home: boolean | null
@@ -216,7 +218,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          away_score?: number | null
           created_at?: string
+          home_score?: number | null
           ical_uid?: string | null
           id?: string
           is_home?: boolean | null
@@ -227,7 +231,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          away_score?: number | null
           created_at?: string
+          home_score?: number | null
           ical_uid?: string | null
           id?: string
           is_home?: boolean | null
@@ -310,6 +316,7 @@ export type Database = {
           matches_excused: number | null
           matches_injured: number | null
           matches_present: number | null
+          matches_won: number | null
           photo_url: string | null
           position: string | null
           red_cards: number | null

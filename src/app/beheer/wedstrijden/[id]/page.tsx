@@ -1,12 +1,19 @@
 import { notFound } from "next/navigation";
 import { getStaffContext } from "@/lib/staff";
-import { saveMatchEntry, addCard, deleteCard } from "./actions";
+import { getMatchScoreView, outcomeLabel } from "@/lib/match-result";
+import { saveMatchEntry, saveMatchResult, addCard, deleteCard } from "./actions";
 
 const attendanceLabel: Record<string, string> = {
   present: "Aanwezig",
   absent: "Afwezig",
   excused: "Afgemeld",
   injured: "Geblesseerd",
+};
+
+const matchStatusLabel: Record<string, string> = {
+  scheduled: "Gepland",
+  played: "Gespeeld",
+  cancelled: "Afgelast",
 };
 
 const cardLabel: Record<string, string> = {
@@ -27,13 +34,15 @@ export default async function MatchEntryPage({
 
   const { data: match } = await supabase
     .from("matches")
-    .select("id, starts_at, opponent, is_home, status")
+    .select("id, starts_at, opponent, is_home, status, home_score, away_score")
     .eq("id", id)
     .maybeSingle();
 
   if (!match) {
     notFound();
   }
+
+  const scoreView = getMatchScoreView(match);
 
   const { data: players } = await supabase
     .from("players")
@@ -65,24 +74,83 @@ export default async function MatchEntryPage({
   );
 
   const saveMatchEntryWithId = saveMatchEntry.bind(null, id);
+  const saveMatchResultWithId = saveMatchResult.bind(null, id);
   const addCardWithId = addCard.bind(null, id);
   const deleteCardWithId = deleteCard.bind(null, id);
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-wider text-accent">
-          {new Date(match.starts_at).toLocaleDateString("nl-NL", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
-        </p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">
-          {match.is_home ? "Thuis" : "Uit"} tegen{" "}
-          {match.opponent ?? "onbekende tegenstander"}
-        </h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+            {new Date(match.starts_at).toLocaleDateString("nl-NL", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight">
+            {match.is_home ? "Thuis" : "Uit"} tegen{" "}
+            {match.opponent ?? "onbekende tegenstander"}
+          </h1>
+        </div>
+        <span className="rounded-full border border-border px-3 py-1 text-xs text-muted">
+          {matchStatusLabel[match.status] ?? match.status}
+        </span>
       </div>
+
+      <section className="rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+          Uitslag
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          Vul de uitslag in zodra de wedstrijd gespeeld is — de status
+          springt dan automatisch van &quot;Gepland&quot; naar
+          &quot;Gespeeld&quot;. Laat beide velden leeg om de uitslag weer te
+          wissen.
+        </p>
+        <form
+          action={saveMatchResultWithId}
+          className="mt-4 flex flex-wrap items-end gap-3"
+        >
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">
+              Doelpunten Excelsior&apos;31 4
+            </label>
+            <input
+              type="number"
+              min={0}
+              name="own_score"
+              defaultValue={scoreView?.ownScore ?? ""}
+              className={numberClass}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted">
+              Doelpunten {match.opponent ?? "tegenstander"}
+            </label>
+            <input
+              type="number"
+              min={0}
+              name="opponent_score"
+              defaultValue={scoreView?.opponentScore ?? ""}
+              className={numberClass}
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-lg bg-accent px-4 py-2 font-semibold text-accent-foreground transition hover:bg-accent-strong"
+          >
+            Uitslag opslaan
+          </button>
+          {scoreView && (
+            <span className="pb-2.5 text-sm font-medium text-muted">
+              {scoreView.ownScore}-{scoreView.opponentScore} ·{" "}
+              {outcomeLabel[scoreView.outcome]}
+            </span>
+          )}
+        </form>
+      </section>
 
       <section className="rounded-2xl border border-border bg-surface p-6">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">

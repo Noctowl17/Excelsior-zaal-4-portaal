@@ -6,6 +6,69 @@ import { getStaffContext } from "@/lib/staff";
 const ATTENDANCE_VALUES = ["present", "absent", "excused", "injured"];
 const CARD_TYPES = ["yellow", "red"];
 
+// Zet een score-invoerveld om naar een niet-negatief getal, of naar `null`
+// als het veld leeg is gelaten (dan is er nog geen uitslag bekend).
+function parseScore(raw: FormDataEntryValue | null): number | null {
+  const value = String(raw ?? "").trim();
+  if (value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null;
+}
+
+export async function saveMatchResult(matchId: string, formData: FormData) {
+  const { supabase, isStaff } = await getStaffContext();
+  if (!isStaff) throw new Error("Geen stafrechten.");
+
+  const { data: match, error: matchError } = await supabase
+    .from("matches")
+    .select("is_home")
+    .eq("id", matchId)
+    .maybeSingle();
+  if (matchError) throw new Error(matchError.message);
+  if (!match) throw new Error("Wedstrijd niet gevonden.");
+
+  const ownScore = parseScore(formData.get("own_score"));
+  const opponentScore = parseScore(formData.get("opponent_score"));
+
+  // "Eigen"/"tegenstander" is voor de staf de natuurlijke invoer; in de
+  // database slaan we dit op als thuis-/uitscore (zoals de rest van het
+  // schema), met dezelfde "onbekend = thuis"-aanname als elders.
+  const isHome = match.is_home ?? true;
+  const homeScore = isHome ? ownScore : opponentScore;
+  const awayScore = isHome ? opponentScore : ownScore;
+
+  // Alleen automatisch op "gespeeld" zetten zodra er een volledige uitslag
+  // is; een lege uitslag zet 'm terug naar "gepland" (bv. als je per ongeluk
+  // had opgeslagen). Een handmatig ingestelde "afgelast"-status raken we
+  // hier niet aan.
+  const { data: current, error: currentError } = await supabase
+    .from("matches")
+    .select("status")
+    .eq("id", matchId)
+    .maybeSingle();
+  if (currentError) throw new Error(currentError.message);
+
+  const hasFullResult = homeScore !== null && awayScore !== null;
+  const nextStatus =
+    current?.status === "cancelled"
+      ? current.status
+      : hasFullResult
+        ? "played"
+        : "scheduled";
+
+  const { error } = await supabase
+    .from("matches")
+    .update({ home_score: homeScore, away_score: awayScore, status: nextStatus })
+    .eq("id", matchId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/beheer/wedstrijden/${matchId}`);
+  revalidatePath("/beheer/wedstrijden");
+  revalidatePath("/wedstrijden");
+  revalidatePath("/spelers");
+  revalidatePath("/");
+}
+
 export async function saveMatchEntry(matchId: string, formData: FormData) {
   const { supabase, isStaff } = await getStaffContext();
   if (!isStaff) throw new Error("Geen stafrechten.");

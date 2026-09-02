@@ -51,10 +51,14 @@ export default async function SpelersPage() {
                 {p.position ?? "positie onbekend"}
               </p>
 
-              <dl className="mt-4 grid w-full grid-cols-3 gap-2 rounded-xl bg-background/60 py-3 text-center text-sm">
+              <dl className="mt-4 grid w-full grid-cols-4 gap-2 rounded-xl bg-background/60 py-3 text-center text-sm">
                 <div>
                   <dt className="text-xs text-muted">Aanwezig</dt>
                   <dd className="font-semibold">{p.matches_present}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Gewonnen</dt>
+                  <dd className="font-semibold text-accent">{p.matches_won}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted">Goals</dt>

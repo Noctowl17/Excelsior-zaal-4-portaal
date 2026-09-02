@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMatchScoreView, outcomeLabel, outcomeBadgeStyle } from "@/lib/match-result";
 
 export const metadata = {
   title: "Wedstrijden - Excelsior'31 4",
@@ -21,7 +22,7 @@ export default async function WedstrijdenPage() {
 
   const { data: matches, error } = await supabase
     .from("matches")
-    .select("id, starts_at, opponent, is_home, location, status")
+    .select("id, starts_at, opponent, is_home, location, status, home_score, away_score")
     .order("starts_at", { ascending: true });
 
   return (
@@ -40,6 +41,7 @@ export default async function WedstrijdenPage() {
       <div className="mt-6 space-y-3">
         {matches?.map((m) => {
           const date = new Date(m.starts_at);
+          const scoreView = getMatchScoreView(m);
           return (
             <div
               key={m.id}
@@ -68,12 +70,19 @@ export default async function WedstrijdenPage() {
                   {m.location ? ` · ${m.location}` : ""}
                 </p>
               </div>
+              {scoreView && (
+                <span className="text-lg font-bold tabular-nums">
+                  {scoreView.ownScore}-{scoreView.opponentScore}
+                </span>
+              )}
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  statusStyle[m.status] ?? "bg-border text-muted"
+                  scoreView
+                    ? outcomeBadgeStyle[scoreView.outcome]
+                    : (statusStyle[m.status] ?? "bg-border text-muted")
                 }`}
               >
-                {statusLabel[m.status] ?? m.status}
+                {scoreView ? outcomeLabel[scoreView.outcome] : (statusLabel[m.status] ?? m.status)}
               </span>
             </div>
           );
