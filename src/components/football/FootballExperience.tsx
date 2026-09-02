@@ -18,6 +18,17 @@ import "./football.css";
 // Dit component is bewust een losstaande, client-only 3D-scene: hij wordt
 // vanaf de homepage geladen via `next/dynamic` met `ssr: false`.
 
+// Losse helper (buiten de component) om de camera-fov elke frame bij te
+// werken. Dit is bewust een imperatieve mutatie op het THREE.js
+// camera-object binnen de r3f-renderloop (`useFrame`) — net als de
+// bestaande `camera.position.set(...)/.lerp(...)` hieronder — in plaats van
+// React-state, omdat dit elke frame kan gebeuren en meteen gevolgd moet
+// worden door `updateProjectionMatrix()`.
+function applyPerspectiveFov(cam: THREE.PerspectiveCamera, fovDeg: number) {
+  cam.fov = fovDeg;
+  cam.updateProjectionMatrix();
+}
+
 function CinematicCamera({ introComplete }: { introComplete: boolean }) {
   const { camera, pointer, size } = useThree();
   const started = useRef(false);
@@ -35,6 +46,51 @@ function CinematicCamera({ introComplete }: { introComplete: boolean }) {
     const delta = Math.min(rawDelta, 0.05);
     elapsed.current += delta;
     const mobile = size.width < 700;
+
+    // De camera-framing hieronder is oorspronkelijk getuned voor een smalle,
+    // kaartachtige container (verhouding ca. 4:3). Nu de hero de volle
+    // schermbreedte gebruikt, is op brede (desktop) vensters de zichthoek
+    // veel breder dan waarvoor 'm getuned is: het perspective-camera fov is
+    // verticaal gedefinieerd, dus een breder beeldformaat levert automatisch
+    // een breder *horizontaal* gezichtsveld op — niet een groter veld. Het
+    // veld zelf blijft daardoor een smalle strook in het midden, met veel
+    // (donkere) stadionruimte aan weerszijden — precies het "smal met
+    // marges"-effect dat je op elk breed scherm terugziet, ongeacht browser
+    // of zoomniveau. Op brede vensters versmallen we daarom het verticale
+    // fov zodat de horizontale kijkhoek (en dus hoeveel breedte van het veld
+    // je ziet) ongeveer gelijk blijft aan de oorspronkelijk getunede
+    // verhouding. Op mobiel/normale vensters (aspect <= baseAspect) raken we
+    // hier niets aan.
+    let wideLookYOffset = 0;
+    if (!mobile) {
+      const perspectiveCamera = camera as THREE.PerspectiveCamera;
+      const baseAspect = 4 / 3;
+      const baseFovDeg = 42;
+      const minFovDeg = 32;
+      const aspect = size.width / Math.max(size.height, 1);
+      const targetFovDeg =
+        aspect > baseAspect
+          ? (() => {
+              const baseHalfV = THREE.MathUtils.degToRad(baseFovDeg / 2);
+              const targetHalfH = Math.atan(Math.tan(baseHalfV) * baseAspect);
+              const halfV = Math.atan(Math.tan(targetHalfH) / aspect);
+              return THREE.MathUtils.clamp(THREE.MathUtils.radToDeg(halfV) * 2, minFovDeg, baseFovDeg);
+            })()
+          : baseFovDeg;
+      if (Math.abs(perspectiveCamera.fov - targetFovDeg) > 0.05) {
+        applyPerspectiveFov(perspectiveCamera, targetFovDeg);
+      }
+      // Een smaller verticaal fov snijdt van boven en onder evenveel weg
+      // rond het kijkpunt. De spelerskaarten zweven boven grondniveau, dus
+      // zonder correctie vallen zij als eerste buiten beeld terwijl het
+      // (grondgebonden) veld nog gewoon zichtbaar blijft. Door het kijkpunt
+      // mee omhoog te schuiven naarmate het fov versmalt, centreren we het
+      // overgebleven beeld juist rond de spelers in plaats van rond de
+      // grond.
+      const narrowing = 1 - (targetFovDeg - minFovDeg) / (baseFovDeg - minFovDeg);
+      wideLookYOffset = narrowing * 2.6;
+    }
+
     const progress = reduceMotion ? 1 : Math.min(elapsed.current / 2.55, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
     const base = mobile ? new THREE.Vector3(0, 31, 33) : new THREE.Vector3(13.5, 24, 27.5);
@@ -44,7 +100,7 @@ function CinematicCamera({ introComplete }: { introComplete: boolean }) {
     target.x += pointer.x * (mobile ? 0.35 : 1.15) + drift;
     target.y += pointer.y * (mobile ? 0.25 : 0.62);
     camera.position.lerp(target, 1 - Math.exp(-4.2 * delta));
-    lookAt.current.set(pointer.x * 0.45, 0, pointer.y * -0.65);
+    lookAt.current.set(pointer.x * 0.45, wideLookYOffset, pointer.y * -0.65);
     camera.lookAt(lookAt.current);
   });
 
