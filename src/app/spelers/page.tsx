@@ -31,28 +31,33 @@ export default async function SpelersPage() {
             key={p.id}
             className="group relative overflow-hidden rounded-2xl border border-border bg-surface transition hover:border-accent/60 hover:shadow-[0_10px_40px_-15px_rgba(220,38,38,0.35)]"
           >
-            <div className="relative h-14 bg-gradient-to-r from-accent-strong to-accent">
+            <div className="relative h-40 w-full">
+              {p.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- vaste kaartkop; next/image is hier overkill.
+                <img
+                  src={p.photo_url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent-strong to-accent">
+                  <span className="text-4xl font-bold text-accent-foreground/90">
+                    {p.first_name?.[0]}
+                    {p.last_name?.[0]}
+                  </span>
+                </div>
+              )}
+              {p.photo_url && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+              )}
               {p.shirt_number ? (
-                <span className="absolute right-3 top-1 text-3xl font-black text-background/30">
+                <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground shadow-lg">
                   {p.shirt_number}
                 </span>
               ) : null}
             </div>
-            <div className="-mt-4 flex flex-col items-center px-4 pb-4 text-center">
-              {p.photo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- vast avatarformaat; next/image is hier overkill.
-                <img
-                  src={p.photo_url}
-                  alt=""
-                  className="h-16 w-16 rounded-full border-4 border-surface object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-surface bg-background text-lg font-bold text-accent">
-                  {p.first_name?.[0]}
-                  {p.last_name?.[0]}
-                </div>
-              )}
-              <p className="mt-2 font-semibold">
+            <div className="flex flex-col items-center px-4 pb-4 pt-4 text-center">
+              <p className="font-semibold">
                 {p.first_name} {p.last_name}
               </p>
               <p className="text-xs uppercase tracking-wide text-muted">
