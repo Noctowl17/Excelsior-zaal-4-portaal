@@ -32,6 +32,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/spelers" className="transition hover:text-foreground">
                 Spelers
               </Link>
+              <Link href="/statistieken" className="transition hover:text-foreground">
+                Statistieken
+              </Link>
               <AuthNav email={user?.email ?? null} isStaff={isStaff} />
             </div>
           </nav>
