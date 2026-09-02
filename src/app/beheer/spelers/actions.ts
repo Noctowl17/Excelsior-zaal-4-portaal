@@ -3,6 +3,61 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getStaffContext } from "@/lib/staff";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const PHOTO_BUCKET = "player-photos";
+const PHOTO_MIME_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+// Haalt het pad binnen de bucket uit een eerder opgeslagen publieke
+// Storage-URL, zodat we de oude foto kunnen opruimen bij een vervanging of
+// verwijdering. Geeft `null` terug voor een leeg/onbekend/extern veld, dan
+// slaan we het opruimen gewoon over (geen fatale fout waard).
+function storagePathFromPublicUrl(url: string | null): string | null {
+  if (!url) return null;
+  const marker = `/object/public/${PHOTO_BUCKET}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  return decodeURIComponent(url.slice(index + marker.length));
+}
+
+// Upload een nieuwe spelersfoto (indien meegegeven) en geeft de publieke URL
+// terug. Ruimt de vorige foto op zodat de bucket niet vol raakt met oude
+// bestanden. Gooit een duidelijke fout bij een ongeldig/te groot bestand i.p.v.
+// een cryptische Storage-foutmelding.
+async function uploadPlayerPhoto(
+  supabase: SupabaseClient,
+  playerId: string,
+  previousPhotoUrl: string | null,
+  file: File,
+): Promise<string> {
+  const ext = PHOTO_MIME_EXT[file.type];
+  if (!ext) {
+    throw new Error("Alleen JPG, PNG of WEBP-afbeeldingen zijn toegestaan.");
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("De foto is groter dan 5 MB.");
+  }
+
+  const path = `${playerId}-${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const previousPath = storagePathFromPublicUrl(previousPhotoUrl);
+  if (previousPath) {
+    // Best-effort: als opruimen mislukt, laten we de nieuwe upload gewoon
+    // staan i.p.v. de hele actie te laten falen op een oud bestand.
+    await supabase.storage.from(PHOTO_BUCKET).remove([previousPath]);
+  }
+
+  const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
 
 export async function createPlayer(formData: FormData) {
   const { supabase, isStaff } = await getStaffContext();
@@ -50,10 +105,33 @@ export async function updatePlayer(playerId: string, formData: FormData) {
   const birth_date = birthRaw || null;
   const active = formData.get("active") === "on";
   const injured = formData.get("injured") === "on";
+  const removePhoto = formData.get("remove_photo") === "on";
+  const photoFile = formData.get("photo");
+
+  const { data: currentPlayer, error: currentPlayerError } = await supabase
+    .from("players")
+    .select("photo_url")
+    .eq("id", playerId)
+    .maybeSingle();
+  if (currentPlayerError) throw new Error(currentPlayerError.message);
+  const previousPhotoUrl = currentPlayer?.photo_url ?? null;
+
+  // Een leeg bestandsveld komt binnen als een `File` met size 0 — alleen een
+  // echt gekozen bestand verwerken we als upload.
+  let photo_url = previousPhotoUrl;
+  if (photoFile instanceof File && photoFile.size > 0) {
+    photo_url = await uploadPlayerPhoto(supabase, playerId, previousPhotoUrl, photoFile);
+  } else if (removePhoto && previousPhotoUrl) {
+    const previousPath = storagePathFromPublicUrl(previousPhotoUrl);
+    if (previousPath) {
+      await supabase.storage.from(PHOTO_BUCKET).remove([previousPath]);
+    }
+    photo_url = null;
+  }
 
   const { error } = await supabase
     .from("players")
-    .update({ first_name, last_name, shirt_number, position, birth_date, active })
+    .update({ first_name, last_name, shirt_number, position, birth_date, active, photo_url })
     .eq("id", playerId);
   if (error) throw new Error(error.message);
 

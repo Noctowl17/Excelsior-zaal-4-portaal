@@ -16,8 +16,7 @@ export default async function SpelersPage() {
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Spelers &amp; statistieken</h1>
       <p className="mt-2 text-muted">
-        Aanwezigheid, doelpunten, assists en kaarten dit seizoen. Spelerskaarten
-        met foto&apos;s volgen zodra die zijn aangeleverd.
+        Aanwezigheid, doelpunten, assists en kaarten dit seizoen.
       </p>
 
       {error && (
@@ -40,10 +39,19 @@ export default async function SpelersPage() {
               ) : null}
             </div>
             <div className="-mt-8 flex flex-col items-center px-4 pb-4 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-surface bg-background text-lg font-bold text-accent">
-                {p.first_name?.[0]}
-                {p.last_name?.[0]}
-              </div>
+              {p.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- vast avatarformaat; next/image is hier overkill.
+                <img
+                  src={p.photo_url}
+                  alt=""
+                  className="h-16 w-16 rounded-full border-4 border-surface object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-surface bg-background text-lg font-bold text-accent">
+                  {p.first_name?.[0]}
+                  {p.last_name?.[0]}
+                </div>
+              )}
               <p className="mt-2 font-semibold">
                 {p.first_name} {p.last_name}
               </p>

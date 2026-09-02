@@ -12,5 +12,6 @@ export type StadiumPlayer = {
   yellowCards: number;
   redCards: number;
   injured: boolean;
+  photoUrl: string | null;
   coordinates: [number, number, number];
 };

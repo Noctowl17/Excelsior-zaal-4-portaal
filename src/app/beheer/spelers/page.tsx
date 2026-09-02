@@ -14,7 +14,7 @@ export default async function BeheerSpelersPage() {
 
   const { data: players, error } = await supabase
     .from("players")
-    .select("id, first_name, last_name, shirt_number, position, active")
+    .select("id, first_name, last_name, shirt_number, position, active, photo_url")
     .order("last_name", { ascending: true });
 
   return (
@@ -59,13 +59,28 @@ export default async function BeheerSpelersPage() {
         <div className="mt-4 divide-y divide-border">
           {players?.map((p) => (
             <div key={p.id} className="flex items-center justify-between gap-3 py-3">
-              <div>
-                <p className="font-medium">
-                  {p.first_name} {p.last_name}
-                  {p.shirt_number ? ` (#${p.shirt_number})` : ""}
-                  {!p.active && <span className="ml-2 text-xs text-muted">(inactief)</span>}
-                </p>
-                <p className="text-xs text-muted">{p.position ?? "positie onbekend"}</p>
+              <div className="flex items-center gap-3">
+                {p.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- vast avatarformaat; next/image is hier overkill.
+                  <img
+                    src={p.photo_url}
+                    alt=""
+                    className="h-9 w-9 flex-none rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-background text-xs font-semibold text-muted">
+                    {p.first_name?.[0]}
+                    {p.last_name?.[0]}
+                  </span>
+                )}
+                <div>
+                  <p className="font-medium">
+                    {p.first_name} {p.last_name}
+                    {p.shirt_number ? ` (#${p.shirt_number})` : ""}
+                    {!p.active && <span className="ml-2 text-xs text-muted">(inactief)</span>}
+                  </p>
+                  <p className="text-xs text-muted">{p.position ?? "positie onbekend"}</p>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <Link href={`/beheer/spelers/${p.id}`} className="text-sm text-accent hover:underline">

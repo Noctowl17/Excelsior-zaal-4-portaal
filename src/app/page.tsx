@@ -62,6 +62,7 @@ type SquadPlayer = {
   red_cards: number | null;
   matches_present: number | null;
   is_injured: boolean | null;
+  photo_url: string | null;
 };
 
 function displayName(firstName: string | null, lastName: string | null) {
@@ -90,7 +91,7 @@ export default async function HomePage() {
   const { data: squad } = await supabase
     .from("player_stats_overview")
     .select(
-      "id, first_name, last_name, shirt_number, position, goals, yellow_cards, red_cards, matches_present, is_injured",
+      "id, first_name, last_name, shirt_number, position, goals, yellow_cards, red_cards, matches_present, is_injured, photo_url",
     )
     .eq("active", true)
     .order("shirt_number", { ascending: true, nullsFirst: false })
@@ -120,6 +121,7 @@ export default async function HomePage() {
       yellowCards: row.yellow_cards ?? 0,
       redCards: row.red_cards ?? 0,
       injured: row.is_injured ?? false,
+      photoUrl: row.photo_url,
       coordinates: slot.coordinates,
     });
   }
@@ -164,21 +166,38 @@ export default async function HomePage() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Bank</h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {benchRows.map((p) => (
-              <div key={p.id} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
-                <p className="flex items-center gap-1.5 font-medium">
-                  {displayName(p.first_name, p.last_name)}
-                  {p.shirt_number ? ` (#${p.shirt_number})` : ""}
-                  {p.is_injured && (
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full bg-danger/15 px-1.5 py-0.5 text-[0.65rem] font-semibold text-danger"
-                      title="Geblesseerd"
-                    >
-                      <Bandage className="h-3 w-3" aria-hidden="true" />
-                      Geblesseerd
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-muted">{p.position ?? "positie onbekend"}</p>
+              <div
+                key={p.id}
+                className="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2.5 text-sm"
+              >
+                {p.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- klein vast avatarformaat; next/image is hier overkill.
+                  <img
+                    src={p.photo_url}
+                    alt=""
+                    className="h-9 w-9 flex-none rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-surface text-xs font-semibold text-muted">
+                    {initialsOf(p.first_name, p.last_name)}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-1.5 font-medium">
+                    {displayName(p.first_name, p.last_name)}
+                    {p.shirt_number ? ` (#${p.shirt_number})` : ""}
+                    {p.is_injured && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-danger/15 px-1.5 py-0.5 text-[0.65rem] font-semibold text-danger"
+                        title="Geblesseerd"
+                      >
+                        <Bandage className="h-3 w-3" aria-hidden="true" />
+                        Geblesseerd
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted">{p.position ?? "positie onbekend"}</p>
+                </div>
               </div>
             ))}
           </div>

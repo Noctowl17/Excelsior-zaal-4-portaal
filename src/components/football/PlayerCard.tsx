@@ -93,9 +93,19 @@ export function PlayerCard({ player, index, active, muted, introComplete, onActi
         >
           <span className="card-sheen" aria-hidden="true" />
           <span className="portrait-wrap">
-            <span className="portrait-placeholder" aria-hidden="true">
-              <span className="portrait-initials">{player.initials}</span>
-            </span>
+            {player.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- vaste portret-tegel in een 3D/Html-laag; geen next/image nodig.
+              <img
+                src={player.photoUrl}
+                alt=""
+                className="portrait-photo"
+                loading="lazy"
+              />
+            ) : (
+              <span className="portrait-placeholder" aria-hidden="true">
+                <span className="portrait-initials">{player.initials}</span>
+              </span>
+            )}
             <span className="shirt-number">{player.number ?? "-"}</span>
             <span className="position-tag">{player.position ?? ""}</span>
             {player.injured && (

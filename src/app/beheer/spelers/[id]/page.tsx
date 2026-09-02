@@ -14,7 +14,7 @@ export default async function EditPlayerPage({
 
   const { data: player } = await supabase
     .from("players")
-    .select("id, first_name, last_name, shirt_number, position, birth_date, active")
+    .select("id, first_name, last_name, shirt_number, position, birth_date, active, photo_url")
     .eq("id", id)
     .maybeSingle();
 
@@ -41,6 +41,42 @@ export default async function EditPlayerPage({
         {player.first_name} {player.last_name} bewerken
       </h1>
       <form action={updatePlayerWithId} className="mt-6 space-y-3">
+        <div className="flex items-center gap-4 rounded-lg border border-border bg-background px-3 py-3">
+          {player.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- vast avatarformaat; next/image is hier overkill.
+            <img
+              src={player.photo_url}
+              alt=""
+              className="h-16 w-16 flex-none rounded-full object-cover"
+            />
+          ) : (
+            <span className="grid h-16 w-16 flex-none place-items-center rounded-full bg-surface text-lg font-semibold text-muted">
+              {player.first_name?.[0]}
+              {player.last_name?.[0]}
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <label className="block text-xs text-muted">
+              {player.photo_url ? "Nieuwe foto uploaden" : "Foto uploaden"}
+              <input
+                name="photo"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="mt-1 block w-full text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-accent-foreground hover:file:bg-accent-strong"
+              />
+            </label>
+            {player.photo_url && (
+              <label className="mt-2 flex items-center gap-2 text-xs text-muted">
+                <input
+                  type="checkbox"
+                  name="remove_photo"
+                  className="h-3.5 w-3.5 rounded border-border"
+                />
+                Huidige foto verwijderen
+              </label>
+            )}
+          </div>
+        </div>
         <input
           name="first_name"
           defaultValue={player.first_name}
