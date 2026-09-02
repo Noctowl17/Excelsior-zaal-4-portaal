@@ -15,8 +15,8 @@ const FootballExperience = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex items-center justify-center rounded-2xl border border-border bg-surface text-sm text-muted"
-        style={{ height: "clamp(28rem, 82vh, 46rem)" }}
+        className="flex items-center justify-center border border-border bg-surface text-sm text-muted"
+        style={{ height: "clamp(32rem, 92vh, 60rem)" }}
       >
         Veld wordt geladen…
       </div>

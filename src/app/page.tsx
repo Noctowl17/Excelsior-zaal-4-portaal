@@ -6,20 +6,49 @@ import type { StadiumPlayer } from "@/components/football/types";
 // Homepage-hero: geporteerd van het "stadium-spirit"-ontwerp dat je zelf met
 // Lovable maakte (een interactieve 3D-veldweergave met zwevende
 // spelerskaarten), aangepast voor Excelsior'31 4: echte Supabase-data, een
-// 1-2-1-1-basisformatie (i.p.v. het 4-3-3 uit het ontwerp), initialen i.p.v.
-// echte foto's (die heb je nog niet aangeleverd), en zonder de decoratieve
-// navigatiebalk uit het ontwerp — de site heeft al een eigen header. Dit
-// vervangt de eerdere "Broadcast"-homepage.
+// vaste 1-4-3-2-opstelling met de hele actieve selectie (i.p.v. het 4-3-3 uit
+// het ontwerp), initialen i.p.v. echte foto's (die heb je nog niet
+// aangeleverd), en zonder de decoratieve navigatiebalk uit het ontwerp — de
+// site heeft al een eigen header. Dit vervangt de eerdere
+// "Broadcast"-homepage. De hero is edge-to-edge (volle breedte) en groot
+// weergegeven; de site-header blijft (sticky) zichtbaar erboven.
 
-// Vaste 3D-posities voor de basisvijf in een 1-2-1-1-opstelling, in het
-// coördinatenstelsel van het veld (x: -10..10, z: -16 aanval .. 16 verdediging).
-const FORMATION_SLOTS: [number, number, number][] = [
-  [0, 0, 12], // keeper
-  [0, 0, 6], // vaste verdediger
-  [-5.5, 0, -1], // linker aspeler
-  [5.5, 0, -1], // rechter aspeler
-  [0, 0, -10], // pivot/aanvaller
+type FormationLine = "keeper" | "verdediging" | "middenveld" | "aanval";
+
+const POSITION_LABELS: Record<FormationLine, string> = {
+  keeper: "Keeper",
+  verdediging: "Verdediger",
+  middenveld: "Middenvelder",
+  aanval: "Aanvaller",
+};
+
+// Vaste indeling die je zelf hebt doorgegeven: Frank Nijkamp staat altijd op
+// doel, de rest in een 1-4-3-2-opstelling. Spelers worden herkend op voor- en
+// achternaam (zoals ze in Supabase staan). Een speler die niet (meer) in dit
+// lijstje voorkomt — nieuwe aanwinst, naam gewijzigd, iemand inactief — komt
+// gewoon op de bank te staan in plaats van dat de pagina crasht; en een naam
+// hieronder die niet (meer) actief is, wordt gewoon overgeslagen.
+const FORMATION_LINEUP: {
+  firstName: string;
+  lastName: string;
+  line: FormationLine;
+  coordinates: [number, number, number];
+}[] = [
+  { firstName: "Frank", lastName: "Nijkamp", line: "keeper", coordinates: [0, 0, -13.5] },
+  { firstName: "Stijn", lastName: "Beverdam", line: "verdediging", coordinates: [-7.5, 0, -6.5] },
+  { firstName: "Jarnick", lastName: "ter Stal", line: "verdediging", coordinates: [-2.6, 0, -7.5] },
+  { firstName: "Gerald", lastName: "Pas", line: "verdediging", coordinates: [2.6, 0, -7.5] },
+  { firstName: "Ruben", lastName: "Smelt", line: "verdediging", coordinates: [7.5, 0, -6.5] },
+  { firstName: "Sander", lastName: "Gerritsen", line: "middenveld", coordinates: [-6, 0, 0.5] },
+  { firstName: "Sven", lastName: "Koedijk", line: "middenveld", coordinates: [0, 0, -0.5] },
+  { firstName: "Mike", lastName: "Janssen", line: "middenveld", coordinates: [6, 0, 0.5] },
+  { firstName: "Maarten", lastName: "Baan", line: "aanval", coordinates: [-3.5, 0, 8] },
+  { firstName: "Frank", lastName: "Gerritsen Mulkes", line: "aanval", coordinates: [3.5, 0, 8] },
 ];
+
+function nameKey(firstName: string | null, lastName: string | null) {
+  return `${firstName?.trim().toLowerCase() ?? ""}|${lastName?.trim().toLowerCase() ?? ""}`;
+}
 
 type SquadPlayer = {
   id: string;
@@ -70,21 +99,29 @@ export default async function HomePage() {
   // expliciet weg zodat SquadPlayer.id altijd een string is.
   const squadRows = (squad ?? []).filter((p): p is SquadPlayer => p.id !== null);
 
-  const onPitchRows = squadRows.slice(0, FORMATION_SLOTS.length);
-  const benchRows = squadRows.slice(FORMATION_SLOTS.length);
+  const squadByName = new Map(squadRows.map((p) => [nameKey(p.first_name, p.last_name), p]));
+  const matchedIds = new Set<string>();
 
-  const onPitch: StadiumPlayer[] = onPitchRows.map((p, index) => ({
-    id: p.id,
-    name: displayName(p.first_name, p.last_name),
-    initials: initialsOf(p.first_name, p.last_name),
-    number: p.shirt_number,
-    position: p.position,
-    matches: p.matches_present ?? 0,
-    goals: p.goals ?? 0,
-    yellowCards: p.yellow_cards ?? 0,
-    redCards: p.red_cards ?? 0,
-    coordinates: FORMATION_SLOTS[index] ?? FORMATION_SLOTS[FORMATION_SLOTS.length - 1],
-  }));
+  const onPitch: StadiumPlayer[] = [];
+  for (const slot of FORMATION_LINEUP) {
+    const row = squadByName.get(nameKey(slot.firstName, slot.lastName));
+    if (!row) continue;
+    matchedIds.add(row.id);
+    onPitch.push({
+      id: row.id,
+      name: displayName(row.first_name, row.last_name),
+      initials: initialsOf(row.first_name, row.last_name),
+      number: row.shirt_number,
+      position: POSITION_LABELS[slot.line],
+      matches: row.matches_present ?? 0,
+      goals: row.goals ?? 0,
+      yellowCards: row.yellow_cards ?? 0,
+      redCards: row.red_cards ?? 0,
+      coordinates: slot.coordinates,
+    });
+  }
+
+  const benchRows = squadRows.filter((p) => !matchedIds.has(p.id));
 
   const { data: attendanceRows } = await supabase.from("attendance").select("match_id");
   const played = new Set((attendanceRows ?? []).map((a) => a.match_id)).size;
@@ -99,12 +136,20 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       {onPitch.length > 0 ? (
-        <FootballExperienceClient
-          players={onPitch}
-          clubName="Excelsior'31 4"
-          formationLabel="1-2-1-1"
-          seasonLabel={`Seizoen ${new Date().getFullYear()}`}
-        />
+        // Full-bleed: breekt bewust uit de smalle `max-w-4xl` paginacontainer
+        // (zie layout.tsx) zodat de hero de volle breedte van het scherm
+        // gebruikt. De sticky header van de site blijft daar gewoon boven
+        // zichtbaar en werkt normaal.
+        <div className="overflow-x-hidden">
+          <div className="relative left-1/2 w-screen -translate-x-1/2">
+            <FootballExperienceClient
+              players={onPitch}
+              clubName="Excelsior'31 4"
+              formationLabel="1-4-3-2"
+              seasonLabel={`Seizoen ${new Date().getFullYear()}`}
+            />
+          </div>
+        </div>
       ) : (
         <div className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
           Nog geen spelers toegevoegd.

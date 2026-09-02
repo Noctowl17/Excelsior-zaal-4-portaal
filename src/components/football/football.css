@@ -11,6 +11,10 @@
  *   met initialen, omdat er nog geen spelersfoto's zijn.
  * - body { overflow: hidden } uit het origineel is weggelaten: dit is hier
  *   een sectie op een gewone, scrollbare pagina, niet de hele viewport.
+ * - De hero is edge-to-edge (volle breedte, geen afgeronde hoeken) en flink
+ *   hoger gemaakt; de uitbraak uit de smalle paginacontainer gebeurt in
+ *   page.tsx (een wrapper met `w-screen`), de header van de site blijft
+ *   gewoon zichtbaar (sticky) erboven.
  */
 
 .football-world {
@@ -35,12 +39,12 @@
 
   position: relative;
   width: 100%;
-  height: clamp(28rem, 82vh, 46rem);
+  height: clamp(32rem, 92vh, 60rem);
   overflow: hidden;
   background: var(--background);
   color: var(--foreground);
   isolation: isolate;
-  border-radius: var(--radius-lg);
+  border-radius: 0;
 }
 
 .football-world button {
@@ -235,9 +239,13 @@
   padding: 0.62rem 0.68rem;
 }
 .player-identity strong {
+  display: block;
+  overflow: hidden;
   font-family: var(--font-display);
   font-size: 0.92rem;
   text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .player-identity > span {
   color: var(--muted-foreground);
