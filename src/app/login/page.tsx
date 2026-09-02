@@ -35,7 +35,7 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-sm">
-      <div className="rounded-2xl border border-border bg-surface p-6 text-center shadow-[0_8px_30px_-12px_rgba(74,222,128,0.25)]">
+      <div className="rounded-2xl border border-border bg-surface p-6 text-center shadow-[0_8px_30px_-12px_rgba(220,38,38,0.25)]">
         <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
           E31
         </span>

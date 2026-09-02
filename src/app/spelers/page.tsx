@@ -29,7 +29,7 @@ export default async function SpelersPage() {
         {players?.map((p) => (
           <div
             key={p.id}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-surface transition hover:border-accent/60 hover:shadow-[0_10px_40px_-15px_rgba(74,222,128,0.35)]"
+            className="group relative overflow-hidden rounded-2xl border border-border bg-surface transition hover:border-accent/60 hover:shadow-[0_10px_40px_-15px_rgba(220,38,38,0.35)]"
           >
             <div className="relative h-14 bg-gradient-to-r from-accent-strong to-accent">
               {p.shirt_number ? (
