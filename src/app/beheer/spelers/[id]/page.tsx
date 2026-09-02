@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getStaffContext } from "@/lib/staff";
+import { PLAYER_POSITIONS } from "@/lib/positions";
 import { updatePlayer } from "../actions";
 
 const inputClass =
@@ -14,7 +15,7 @@ export default async function EditPlayerPage({
 
   const { data: player } = await supabase
     .from("players")
-    .select("id, first_name, last_name, shirt_number, position, birth_date, active, photo_url")
+    .select("id, first_name, last_name, shirt_number, position, birth_date, active, photo_url, is_starter")
     .eq("id", id)
     .maybeSingle();
 
@@ -99,12 +100,14 @@ export default async function EditPlayerPage({
           placeholder="Rugnummer"
           className={inputClass}
         />
-        <input
-          name="position"
-          defaultValue={player.position ?? ""}
-          placeholder="Positie"
-          className={inputClass}
-        />
+        <select name="position" defaultValue={player.position ?? ""} className={inputClass}>
+          <option value="">Positie onbekend</option>
+          {PLAYER_POSITIONS.map((position) => (
+            <option key={position} value={position}>
+              {position}
+            </option>
+          ))}
+        </select>
         <label className="block text-xs text-muted">
           Geboortedatum
           <input
@@ -123,6 +126,20 @@ export default async function EditPlayerPage({
           />
           Actief in de selectie
         </label>
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            name="is_starter"
+            defaultChecked={player.is_starter}
+            className="h-4 w-4 rounded border-border"
+          />
+          Basisspeler (in de opstelling op de homepage, anders op de bank)
+        </label>
+        <p className="text-xs text-muted">
+          Vergeet de positie hierboven niet in te vullen — zonder positie
+          weet de homepage niet op welke plek deze speler moet staan en komt
+          hij alsnog op de bank te staan.
+        </p>
         <label className="flex items-center gap-2 text-sm text-muted">
           <input
             type="checkbox"

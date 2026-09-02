@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getStaffContext } from "@/lib/staff";
+import { PLAYER_POSITIONS } from "@/lib/positions";
 import { createPlayer, togglePlayerActive } from "./actions";
 
 export const metadata = {
@@ -14,7 +15,7 @@ export default async function BeheerSpelersPage() {
 
   const { data: players, error } = await supabase
     .from("players")
-    .select("id, first_name, last_name, shirt_number, position, active, photo_url")
+    .select("id, first_name, last_name, shirt_number, position, active, photo_url, is_starter")
     .order("last_name", { ascending: true });
 
   return (
@@ -38,10 +39,26 @@ export default async function BeheerSpelersPage() {
           <input name="first_name" required placeholder="Voornaam" className={inputClass} />
           <input name="last_name" required placeholder="Achternaam" className={inputClass} />
           <input name="shirt_number" type="number" min={0} placeholder="Rugnummer" className={inputClass} />
-          <input name="position" placeholder="Positie" className={inputClass} />
+          <select name="position" defaultValue="" className={inputClass}>
+            <option value="">Positie onbekend</option>
+            {PLAYER_POSITIONS.map((position) => (
+              <option key={position} value={position}>
+                {position}
+              </option>
+            ))}
+          </select>
           <label className="flex flex-col gap-1 text-xs text-muted">
             Geboortedatum (optioneel)
             <input name="birth_date" type="date" className={inputClass} />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <input
+              type="checkbox"
+              name="is_starter"
+              defaultChecked
+              className="h-4 w-4 rounded border-border"
+            />
+            Basisspeler (in de opstelling op de homepage)
           </label>
           <button
             type="submit"
@@ -78,6 +95,9 @@ export default async function BeheerSpelersPage() {
                     {p.first_name} {p.last_name}
                     {p.shirt_number ? ` (#${p.shirt_number})` : ""}
                     {!p.active && <span className="ml-2 text-xs text-muted">(inactief)</span>}
+                    {p.active && !p.is_starter && (
+                      <span className="ml-2 text-xs text-muted">(bank)</span>
+                    )}
                   </p>
                   <p className="text-xs text-muted">{p.position ?? "positie onbekend"}</p>
                 </div>

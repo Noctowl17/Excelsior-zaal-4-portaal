@@ -74,6 +74,7 @@ export async function createPlayer(formData: FormData) {
   const position = String(formData.get("position") ?? "").trim() || null;
   const birthRaw = String(formData.get("birth_date") ?? "").trim();
   const birth_date = birthRaw || null;
+  const is_starter = formData.get("is_starter") === "on";
 
   const { error } = await supabase.from("players").insert({
     first_name,
@@ -81,6 +82,7 @@ export async function createPlayer(formData: FormData) {
     shirt_number,
     position,
     birth_date,
+    is_starter,
   });
   if (error) throw new Error(error.message);
 
@@ -104,6 +106,7 @@ export async function updatePlayer(playerId: string, formData: FormData) {
   const birthRaw = String(formData.get("birth_date") ?? "").trim();
   const birth_date = birthRaw || null;
   const active = formData.get("active") === "on";
+  const is_starter = formData.get("is_starter") === "on";
   const injured = formData.get("injured") === "on";
   const removePhoto = formData.get("remove_photo") === "on";
   const photoFile = formData.get("photo");
@@ -131,7 +134,7 @@ export async function updatePlayer(playerId: string, formData: FormData) {
 
   const { error } = await supabase
     .from("players")
-    .update({ first_name, last_name, shirt_number, position, birth_date, active, photo_url })
+    .update({ first_name, last_name, shirt_number, position, birth_date, active, is_starter, photo_url })
     .eq("id", playerId);
   if (error) throw new Error(error.message);
 

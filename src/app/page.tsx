@@ -3,52 +3,49 @@ import { Bandage } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { FootballExperienceClient } from "@/components/football/FootballExperienceClient";
 import type { StadiumPlayer } from "@/components/football/types";
+import { type FormationLine, lineForPosition } from "@/lib/positions";
 
 // Homepage-hero: geporteerd van het "stadium-spirit"-ontwerp dat je zelf met
 // Lovable maakte (een interactieve 3D-veldweergave met zwevende
-// spelerskaarten), aangepast voor Excelsior'31 4: echte Supabase-data, een
-// vaste 1-4-3-2-opstelling met de hele actieve selectie (i.p.v. het 4-3-3 uit
-// het ontwerp), initialen i.p.v. echte foto's (die heb je nog niet
-// aangeleverd), en zonder de decoratieve navigatiebalk uit het ontwerp — de
-// site heeft al een eigen header. Dit vervangt de eerdere
-// "Broadcast"-homepage. De hero is edge-to-edge (volle breedte) en groot
-// weergegeven; de site-header blijft (sticky) zichtbaar erboven.
+// spelerskaarten), aangepast voor Excelsior'31 4: echte Supabase-data en
+// initialen i.p.v. echte foto's uit het ontwerp (spelersfoto's kun je nu
+// zelf uploaden via het beheerscherm), en zonder de decoratieve
+// navigatiebalk uit het ontwerp — de site heeft al een eigen header. Dit
+// vervangt de eerdere "Broadcast"-homepage. De hero is edge-to-edge (volle
+// breedte) en groot weergegeven; de site-header blijft (sticky) zichtbaar
+// erboven.
+//
+// Wie er op het veld staat (i.p.v. op de bank) en op welke linie, bepaal je
+// zelf via het beheerscherm: het vinkje "Basisspeler" plus de gekozen
+// positie (Keeper/Verdediger/Middenvelder/Aanvaller). Dit was voorheen een
+// hardcoded lijstje met voor-/achternamen in deze pagina — foutgevoelig (een
+// tikfout zette iemand onbedoeld op de bank) en alleen door een developer
+// aan te passen.
 
-type FormationLine = "keeper" | "verdediging" | "middenveld" | "aanval";
-
-const POSITION_LABELS: Record<FormationLine, string> = {
-  keeper: "Keeper",
-  verdediging: "Verdediger",
-  middenveld: "Middenvelder",
-  aanval: "Aanvaller",
+// Vaste "diepte" (z) per linie, met een lichte boogvorm voor linies met
+// meerdere spelers (de buitenste spelers staan iets minder diep dan het
+// midden van de linie) — zelfde uitstraling als het origineel getunede
+// 1-4-3-2, maar nu voor een willekeurig aantal spelers per linie.
+const LINE_LAYOUT: Record<FormationLine, { z: number; curve: number; width: number }> = {
+  keeper: { z: -13.5, curve: 0, width: 0 },
+  verdediging: { z: -7.5, curve: 1, width: 15 },
+  middenveld: { z: -0.5, curve: 1, width: 12 },
+  aanval: { z: 8, curve: 0, width: 7 },
 };
+const LINE_ORDER: FormationLine[] = ["keeper", "verdediging", "middenveld", "aanval"];
 
-// Vaste indeling die je zelf hebt doorgegeven: Frank Nijkamp staat altijd op
-// doel, de rest in een 1-4-3-2-opstelling. Spelers worden herkend op voor- en
-// achternaam (zoals ze in Supabase staan). Een speler die niet (meer) in dit
-// lijstje voorkomt — nieuwe aanwinst, naam gewijzigd, iemand inactief — komt
-// gewoon op de bank te staan in plaats van dat de pagina crasht; en een naam
-// hieronder die niet (meer) actief is, wordt gewoon overgeslagen.
-const FORMATION_LINEUP: {
-  firstName: string;
-  lastName: string;
-  line: FormationLine;
-  coordinates: [number, number, number];
-}[] = [
-  { firstName: "Frank", lastName: "Nijkamp", line: "keeper", coordinates: [0, 0, -13.5] },
-  { firstName: "Stijn", lastName: "Beverdam", line: "verdediging", coordinates: [-7.5, 0, -6.5] },
-  { firstName: "Jarnick", lastName: "ter Stal", line: "verdediging", coordinates: [-2.6, 0, -7.5] },
-  { firstName: "Gerald", lastName: "Pas", line: "verdediging", coordinates: [2.6, 0, -7.5] },
-  { firstName: "Ruben", lastName: "Smelt", line: "verdediging", coordinates: [7.5, 0, -6.5] },
-  { firstName: "Sander", lastName: "Gerritsen", line: "middenveld", coordinates: [-6, 0, 0.5] },
-  { firstName: "Sven", lastName: "Koedijk", line: "middenveld", coordinates: [0, 0, -0.5] },
-  { firstName: "Mike", lastName: "Janssen", line: "middenveld", coordinates: [6, 0, 0.5] },
-  { firstName: "Maarten", lastName: "Baan", line: "aanval", coordinates: [-3.5, 0, 8] },
-  { firstName: "Frank", lastName: "Gerritsen Mulkes", line: "aanval", coordinates: [3.5, 0, 8] },
-];
-
-function nameKey(firstName: string | null, lastName: string | null) {
-  return `${firstName?.trim().toLowerCase() ?? ""}|${lastName?.trim().toLowerCase() ?? ""}`;
+function layoutLine(line: FormationLine, count: number): [number, number, number][] {
+  if (count <= 0) return [];
+  const { z: baseZ, curve, width } = LINE_LAYOUT[line];
+  const spacing = count > 1 ? width / (count - 1) : 0;
+  const half = (count - 1) / 2;
+  return Array.from({ length: count }, (_, i) => {
+    const x = (i - half) * spacing;
+    const maxOffset = half * spacing;
+    const normalized = maxOffset > 0 ? Math.abs(x) / maxOffset : 0;
+    const z = baseZ + curve * normalized * normalized;
+    return [x, 0, z] as [number, number, number];
+  });
 }
 
 type SquadPlayer = {
@@ -63,6 +60,7 @@ type SquadPlayer = {
   matches_present: number | null;
   is_injured: boolean | null;
   photo_url: string | null;
+  is_starter: boolean | null;
 };
 
 function displayName(firstName: string | null, lastName: string | null) {
@@ -91,7 +89,7 @@ export default async function HomePage() {
   const { data: squad } = await supabase
     .from("player_stats_overview")
     .select(
-      "id, first_name, last_name, shirt_number, position, goals, yellow_cards, red_cards, matches_present, is_injured, photo_url",
+      "id, first_name, last_name, shirt_number, position, goals, yellow_cards, red_cards, matches_present, is_injured, photo_url, is_starter",
     )
     .eq("active", true)
     .order("shirt_number", { ascending: true, nullsFirst: false })
@@ -102,31 +100,52 @@ export default async function HomePage() {
   // expliciet weg zodat SquadPlayer.id altijd een string is.
   const squadRows = (squad ?? []).filter((p): p is SquadPlayer => p.id !== null);
 
-  const squadByName = new Map(squadRows.map((p) => [nameKey(p.first_name, p.last_name), p]));
-  const matchedIds = new Set<string>();
+  // Groepeer de basisspelers per linie (op volgorde van de query, dus al
+  // gesorteerd op rugnummer/achternaam). Een basisspeler zonder (herkende)
+  // positie kan niet op het veld geplaatst worden — die valt terug op de
+  // bank, met "positie onbekend" als duidelijke hint om dat nog in te
+  // vullen.
+  const starterIdsByLine: Record<FormationLine, SquadPlayer[]> = {
+    keeper: [],
+    verdediging: [],
+    middenveld: [],
+    aanval: [],
+  };
+  const starterIds = new Set<string>();
+  for (const row of squadRows) {
+    if (!row.is_starter) continue;
+    const line = lineForPosition(row.position);
+    if (!line) continue;
+    starterIdsByLine[line].push(row);
+    starterIds.add(row.id);
+  }
 
   const onPitch: StadiumPlayer[] = [];
-  for (const slot of FORMATION_LINEUP) {
-    const row = squadByName.get(nameKey(slot.firstName, slot.lastName));
-    if (!row) continue;
-    matchedIds.add(row.id);
-    onPitch.push({
-      id: row.id,
-      name: displayName(row.first_name, row.last_name),
-      initials: initialsOf(row.first_name, row.last_name),
-      number: row.shirt_number,
-      position: POSITION_LABELS[slot.line],
-      matches: row.matches_present ?? 0,
-      goals: row.goals ?? 0,
-      yellowCards: row.yellow_cards ?? 0,
-      redCards: row.red_cards ?? 0,
-      injured: row.is_injured ?? false,
-      photoUrl: row.photo_url,
-      coordinates: slot.coordinates,
+  for (const line of LINE_ORDER) {
+    const rows = starterIdsByLine[line];
+    const coordinates = layoutLine(line, rows.length);
+    rows.forEach((row, i) => {
+      onPitch.push({
+        id: row.id,
+        name: displayName(row.first_name, row.last_name),
+        initials: initialsOf(row.first_name, row.last_name),
+        number: row.shirt_number,
+        position: row.position,
+        matches: row.matches_present ?? 0,
+        goals: row.goals ?? 0,
+        yellowCards: row.yellow_cards ?? 0,
+        redCards: row.red_cards ?? 0,
+        injured: row.is_injured ?? false,
+        photoUrl: row.photo_url,
+        coordinates: coordinates[i],
+      });
     });
   }
 
-  const benchRows = squadRows.filter((p) => !matchedIds.has(p.id));
+  const benchRows = squadRows.filter((p) => !starterIds.has(p.id));
+  const formationLabel = LINE_ORDER.filter((line) => line !== "keeper")
+    .map((line) => starterIdsByLine[line].length)
+    .join("-");
 
   const { data: attendanceRows } = await supabase.from("attendance").select("match_id");
   const played = new Set((attendanceRows ?? []).map((a) => a.match_id)).size;
@@ -156,7 +175,7 @@ export default async function HomePage() {
             <FootballExperienceClient
               players={onPitch}
               clubName="Excelsior'31 4"
-              formationLabel="1-4-3-2"
+              formationLabel={formationLabel}
               seasonLabel={`Seizoen ${new Date().getFullYear()}`}
             />
           </div>

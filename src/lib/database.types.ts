@@ -252,6 +252,7 @@ export type Database = {
           created_at: string
           first_name: string
           id: string
+          is_starter: boolean
           last_name: string
           photo_url: string | null
           position: string | null
@@ -263,6 +264,7 @@ export type Database = {
           created_at?: string
           first_name: string
           id?: string
+          is_starter?: boolean
           last_name: string
           photo_url?: string | null
           position?: string | null
@@ -274,6 +276,7 @@ export type Database = {
           created_at?: string
           first_name?: string
           id?: string
+          is_starter?: boolean
           last_name?: string
           photo_url?: string | null
           position?: string | null
@@ -312,6 +315,7 @@ export type Database = {
           goals: number | null
           id: string | null
           is_injured: boolean | null
+          is_starter: boolean | null
           last_name: string | null
           matches_absent: number | null
           matches_excused: number | null
